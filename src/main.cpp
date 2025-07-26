@@ -48,6 +48,8 @@ void MakeMACAddrStr();
 void UnitySend();
 void HeartBeatProcess();
 
+int h2d(char h);
+
 // タイマーはデバッグ用
 hw_timer_t* timer = nullptr;
 uint32_t timerCount = 0;
@@ -106,33 +108,33 @@ void loop() {
   if(Serial.available() > 0)
   {
     char inputChar = Serial.read();
-    // コマンドはaxrrrgggbbbの11文字、またはbxddfffvvの9文字
-    if(inputChar == 'a')
+    // コマンドはcxRRGGBB0、またはbxddfffvvの9文字
+    if(inputChar == 'c')
     {
-      char tmp[3];
+      char tmp[2];
 
-      // 残り10字
+      // 残り8（7）字
       // ID
       tmp[0] = Serial.read();
       uint8_t id = tmp[0] - '0';
 
       // Red
-      tmp[2] = Serial.read();
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int r = (tmp[2] - '0') * 100 + (tmp[1] - '0') * 10 + (tmp[0] - '0');
+      int r = h2d(tmp[1]) * 16 + h2d(tmp[0]);
+      //r /= 8; // 8ビットから5ビットに落とす
       
       // Green
-      tmp[2] = Serial.read();
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int g = (tmp[2] - '0') * 100 + (tmp[1] - '0') * 10 + (tmp[0] - '0');
+      int g = h2d(tmp[1]) * 16 + h2d(tmp[0]);
+      //g /= 4; // 8ビットから6ビットに落とす
 
       // Blue
-      tmp[2] = Serial.read();
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int b = (tmp[2] - '0') * 100 + (tmp[1] - '0') * 10 + (tmp[0] - '0');
+      int b = h2d(tmp[1]) * 16 + h2d(tmp[0]);
+      //b /= 8; // 8ビットから5ビットに落とす
 
       snprintf(messageStr, sizeof(messageStr), "%d %d %d %d", id, r, g, b);
 
@@ -144,10 +146,10 @@ void loop() {
       controllerData.led[1] = g;
       controllerData.led[2] = b;
 
-      // しばらくダミーで残しておく
-      controllerData.soundFolderNo = 2;
-      controllerData.soundFileNo = 3;
-      controllerData.soundVol = 15;
+      // 値を変更する必要はないが、とりあえず0にしておいた
+      controllerData.soundFolderNo = 0;
+      controllerData.soundFileNo = 0;
+      controllerData.soundVol = 0;
 
       drawQueue = true;
       deviceSendQueue = true;
@@ -183,9 +185,9 @@ void loop() {
 
       controllerData.id = espnow.ID();
       controllerData.updateFlag = SOUND_UPDATE;
-      controllerData.led[0] = 0; // ダミー
-      controllerData.led[1] = 0; // ダミー
-      controllerData.led[2] = 0; // ダミー
+      controllerData.led[1] = 0; // 値を変更する必要はないが、とりあえず0にしておいた
+      controllerData.led[2] = 0; // 値を変更する必要はないが、とりあえず0にしておいた
+      controllerData.led[0] = 0; // 値を変更する必要はないが、とりあえず0にしておいた
 
       controllerData.soundFolderNo = folderNum;
       controllerData.soundFileNo = fileNum;
@@ -373,10 +375,24 @@ void ConvertNum2Hex(char* str, uint8_t value)
     str[1] = '0' + digit1;
 }
 
+int h2d(char h)
+{
+  if(h >= 'A' && h <= 'F')
+  {
+    return h - 'A';
+  }
+  else if(h >= '0' && h <= '9')
+  {
+    return h - '0';
+  }
+  else
+  {
+    return 0; // 意味不明文字は0を返す
+  }
+}
+
 void UnitySend()
 {
-  //sprintf(buf, "S%04d%04d%d%d%dE", vol[0], vol[1], sw[0], sw[1], sw[2]);
-    
   Serial.println(toUnityData);
 }
 
