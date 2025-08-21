@@ -27,6 +27,7 @@ typedef struct struct_esp_now_c2d_data {
     uint8_t soundFileNo;
     uint8_t soundVol;
     int16_t score;
+    uint8_t result;
 } ESPNOW_Con2DevData;
 
 #endif
