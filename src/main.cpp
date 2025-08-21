@@ -108,12 +108,12 @@ void loop() {
   if(Serial.available() > 0)
   {
     char inputChar = Serial.read();
-    // コマンドはcxRRGGBB0、またはbxddfffvvの9文字
+    // コマンドはcxRRGGBBm、またはbxddfffvvの9文字
     if(inputChar == 'c')
     {
       char tmp[2];
 
-      // 残り8（7）字
+      // 残り8字
       // ID
       tmp[0] = Serial.read();
       uint8_t id = tmp[0] - '0';
@@ -121,22 +121,26 @@ void loop() {
       // Red
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int r = h2d(tmp[1]) * 16 + h2d(tmp[0]);
-      //r /= 8; // 8ビットから5ビットに落とす
+      int r = h2d(tmp[0]) * 16 + h2d(tmp[1]);
+      //r /= 8; // 8ビットから5ビットに落とす：自動でやってくれるようで不要だった
       
       // Green
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int g = h2d(tmp[1]) * 16 + h2d(tmp[0]);
-      //g /= 4; // 8ビットから6ビットに落とす
+      int g = h2d(tmp[0]) * 16 + h2d(tmp[1]);
+      //g /= 4; // 8ビットから6ビットに落とす：自動でやってくれるようで不要だった
 
       // Blue
       tmp[1] = Serial.read();
       tmp[0] = Serial.read();
-      int b = h2d(tmp[1]) * 16 + h2d(tmp[0]);
-      //b /= 8; // 8ビットから5ビットに落とす
+      int b = h2d(tmp[0]) * 16 + h2d(tmp[1]);
+      //b /= 8; // 8ビットから5ビットに落とす：自動でやってくれるようで不要だった
 
-      snprintf(messageStr, sizeof(messageStr), "%d %d %d %d", id, r, g, b);
+      // 表示するメッセージ
+      tmp[0] = Serial.read();
+      uint8_t result = tmp[0] - '0';
+
+      snprintf(messageStr, sizeof(messageStr), "%d %d %d %d %d", id, r, g, b, result);
 
       targetID = id; // 1～5
 
@@ -145,6 +149,7 @@ void loop() {
       controllerData.led[0] = r;
       controllerData.led[1] = g;
       controllerData.led[2] = b;
+      controllerData.result = result;
 
       // 値を変更する必要はないが、とりあえず0にしておいた
       controllerData.soundFolderNo = 0;
@@ -379,7 +384,7 @@ int h2d(char h)
 {
   if(h >= 'A' && h <= 'F')
   {
-    return h - 'A';
+    return h - 'A' + 10;
   }
   else if(h >= '0' && h <= '9')
   {
